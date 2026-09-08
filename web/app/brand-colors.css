@@ -1,0 +1,162 @@
+:root {
+  color-scheme: light;
+  --brand-primary: #5147f8;
+  --brand-primary-hover: #4338f2;
+  --brand-primary-active: #3730d8;
+  --brand-primary-light: #edebff;
+  --brand-primary-extra-light: #f7f6ff;
+  --brand-blue: #1473e6;
+  --brand-navy: #0f172a;
+  --brand-midnight: #06111e;
+  --brand-gradient: linear-gradient(135deg, #6258ff 0%, #4338f2 100%);
+  --brand-page: #f8fafd;
+  --brand-surface: #ffffff;
+  --brand-sidebar: #f3f7fc;
+  --brand-elevated: #ffffff;
+  --brand-table-head: #f7f9fc;
+  --brand-input: #ffffff;
+  --brand-hover: #f8fafc;
+  --brand-text-heading: #0f172a;
+  --brand-text: #1e293b;
+  --brand-text-secondary: #475569;
+  --brand-text-muted: #64748b;
+  --brand-placeholder: #94a3b8;
+  --brand-border: #dce4ef;
+  --brand-border-soft: #e7edf5;
+  --brand-input-border: #d7e0ec;
+  --status-available-bg: #e9fbf4;
+  --status-available-badge: #ddf9ec;
+  --status-available-border: #b9f0d7;
+  --status-available-icon: #0aa77b;
+  --status-available-text: #059669;
+  --status-issued-bg: #ecf5ff;
+  --status-issued-badge: #e7f2ff;
+  --status-issued-border: #c5dfff;
+  --status-issued-icon: #1473e6;
+  --status-issued-text: #0866d8;
+  --status-reserved-bg: #fff7df;
+  --status-reserved-badge: #fff3d4;
+  --status-reserved-border: #f9df9a;
+  --status-reserved-icon: #e58900;
+  --status-reserved-text: #d97706;
+  --status-danger-bg: #ffedf1;
+  --status-danger-badge: #ffe5eb;
+  --status-danger-border: #ffc4cf;
+  --status-danger-icon: #f43f5e;
+  --status-danger-text: #e11d48;
+  --background: var(--brand-page);
+  --foreground: var(--brand-text);
+  --card: var(--brand-surface);
+  --card-foreground: var(--brand-text);
+  --popover: var(--brand-elevated);
+  --popover-foreground: var(--brand-text);
+  --primary: var(--brand-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--brand-primary-light);
+  --secondary-foreground: var(--brand-primary-hover);
+  --muted: var(--brand-table-head);
+  --muted-foreground: var(--brand-text-muted);
+  --accent: var(--brand-primary-extra-light);
+  --accent-foreground: var(--brand-primary-hover);
+  --destructive: var(--status-danger-text);
+  --border: var(--brand-border);
+  --input: var(--brand-input-border);
+  --ring: var(--brand-primary);
+  --radius: 0.75rem;
+  --sidebar: var(--brand-sidebar);
+  --sidebar-foreground: #334155;
+  --sidebar-primary: var(--brand-primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1ff;
+  --sidebar-accent-foreground: var(--brand-primary-hover);
+  --sidebar-border: var(--brand-border-soft);
+  --sidebar-ring: var(--brand-primary);
+}
+
+.dark {
+  color-scheme: dark;
+  --brand-primary: #5c55ff;
+  --brand-primary-hover: #6d66ff;
+  --brand-primary-active: #4941ed;
+  --brand-primary-light: #171a45;
+  --brand-primary-extra-light: #111c31;
+  --brand-gradient: linear-gradient(135deg, #5c55ff 0%, #2563eb 100%);
+  --brand-page: #06111e;
+  --brand-surface: #0b1725;
+  --brand-sidebar: #071421;
+  --brand-elevated: #112235;
+  --brand-table-head: #0d1b2a;
+  --brand-input: #101e2d;
+  --brand-hover: #13263a;
+  --brand-text-heading: #f8fafc;
+  --brand-text: #e7edf5;
+  --brand-text-secondary: #b2c0cf;
+  --brand-text-muted: #8292a6;
+  --brand-placeholder: #6f8195;
+  --brand-border: #1b2d40;
+  --brand-border-soft: #16283a;
+  --brand-input-border: #24374a;
+  --status-available-bg: #082c25;
+  --status-available-badge: #0a3b2d;
+  --status-available-border: #11664f;
+  --status-available-icon: #21d997;
+  --status-available-text: #4ce3aa;
+  --status-issued-bg: #092542;
+  --status-issued-badge: #0c3762;
+  --status-issued-border: #164a77;
+  --status-issued-icon: #2694ff;
+  --status-issued-text: #55aaff;
+  --status-reserved-bg: #302611;
+  --status-reserved-badge: #4a3710;
+  --status-reserved-border: #725617;
+  --status-reserved-icon: #f5b82e;
+  --status-reserved-text: #f8c44f;
+  --status-danger-bg: #331722;
+  --status-danger-badge: #481d2a;
+  --status-danger-border: #743044;
+  --status-danger-icon: #ff526d;
+  --status-danger-text: #ff7188;
+  --background: var(--brand-page);
+  --foreground: var(--brand-text);
+  --card: #0e1c2b;
+  --card-foreground: var(--brand-text);
+  --popover: var(--brand-elevated);
+  --popover-foreground: var(--brand-text);
+  --primary: var(--brand-primary);
+  --primary-foreground: #ffffff;
+  --secondary: #101e2d;
+  --secondary-foreground: var(--brand-text);
+  --muted: var(--brand-table-head);
+  --muted-foreground: var(--brand-text-muted);
+  --accent: var(--brand-hover);
+  --accent-foreground: var(--brand-text);
+  --destructive: var(--status-danger-text);
+  --border: var(--brand-border);
+  --input: var(--brand-input-border);
+  --ring: var(--brand-primary);
+  --sidebar: var(--brand-sidebar);
+  --sidebar-foreground: var(--brand-text);
+  --sidebar-primary: var(--brand-primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #171a45;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: var(--brand-border-soft);
+  --sidebar-ring: var(--brand-primary);
+}
+
+.dark .text-slate-950 {
+  color: var(--brand-text-heading);
+}
+.dark .text-slate-600 {
+  color: var(--brand-text-secondary);
+}
+.dark .text-slate-500,
+.dark .text-slate-400 {
+  color: var(--brand-text-muted);
+}
+.dark .border-slate-200 {
+  border-color: var(--brand-border);
+}
+.dark .bg-white\/95 {
+  background-color: color-mix(in srgb, var(--brand-surface) 95%, transparent);
+}
