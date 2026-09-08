@@ -1,0 +1,123 @@
+{
+  "info": {
+    "name": "Equipment Ledger API",
+    "description": "Complete API collection for the Wyxan Equipment Ledger assessment. Run Setup requests first. Write operations intentionally mutate local seeded data; run `npm run seed` to reset.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [{
+    "listen": "test",
+    "script": { "exec": [
+      "pm.test('Response is JSON', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'); });",
+      "pm.test('Response time is under 2 seconds', () => { pm.expect(pm.response.responseTime).to.be.below(2000); });"
+    ] }
+  }],
+  "variable": [
+    { "key": "issueKey", "value": "33333333-3333-4333-8333-333333333333" },
+    { "key": "returnKey", "value": "44444444-4444-4444-8444-444444444444" }
+  ],
+  "item": [
+    {
+      "name": "00 - Setup",
+      "item": [
+        {
+          "name": "1 - Select test assets",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/assets", "description": "GET requests have no JSON body. This test selects suitable asset IDs from the response." },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Assets returned', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array').that.is.not.empty; });",
+            "const assets = pm.response.json();",
+            "const plain = assets.find(a => a.currentHolderId === null && a.serviceStatus === 'IN_SERVICE' && !a.requiredCertification);",
+            "const certified = assets.find(a => a.currentHolderId === null && a.serviceStatus === 'IN_SERVICE' && a.requiredCertification === 'GAS_SAFETY');",
+            "pm.expect(plain, 'available uncertified asset').to.exist;",
+            "pm.environment.set('assetId', plain._id);",
+            "if (certified) pm.environment.set('certifiedAssetId', certified._id);"
+          ] } }]
+        },
+        {
+          "name": "2 - Select test workers",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/workers" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Workers returned', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().length).to.be.at.least(3); });",
+            "const workers = pm.response.json();",
+            "const expired = workers.find(w => (w.certifications || []).some(c => c.type === 'GAS_SAFETY' && new Date(c.expiresAt) <= new Date(pm.environment.get('issueTime'))));",
+            "pm.environment.set('workerId', workers[0]._id);",
+            "pm.environment.set('otherWorkerId', workers[1]._id);",
+            "pm.environment.set('keeperId', workers[workers.length - 1]._id);",
+            "if (expired) pm.environment.set('expiredWorkerId', expired._id);"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "01 - Read APIs",
+      "item": [
+        { "name": "List assets", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/assets" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"] } }] },
+        { "name": "Search assets", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/assets?search=DRIL" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('Only matching assets returned', () => { pm.response.to.have.status(200); pm.response.json().forEach(a => pm.expect((a.code + a.name).toLowerCase()).to.include('dril')); });"] } }] },
+        { "name": "Get asset", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/assets/{{assetId}}" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('Selected asset returned', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()._id).to.eql(pm.environment.get('assetId')); });"] } }] },
+        { "name": "Asset history", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/assets/{{assetId}}/history" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('History returned', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] },
+        { "name": "List workers", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/workers" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"] } }] },
+        { "name": "List reservations", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/reservations" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"] } }] },
+        { "name": "As-of before store existed", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ledger/as-of?at=2026-01-01T00%3A00%3A00.000Z" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('Historical result is empty', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.eql([]); });"] } }] }
+      ]
+    },
+    {
+      "name": "02 - Ledger workflow",
+      "item": [
+        {
+          "name": "Issue asset",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"workerId\": \"{{workerId}}\",\n  \"recordedById\": \"{{keeperId}}\",\n  \"effectiveAt\": \"{{issueTime}}\",\n  \"dueAt\": \"{{dueTime}}\",\n  \"idempotencyKey\": \"{{issueKey}}\",\n  \"note\": \"Postman issue workflow\"\n}" }, "url": "{{baseUrl}}/assets/{{assetId}}/issue" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Asset issued', () => pm.response.to.have.status(201));", "pm.environment.set('movementId', pm.response.json()._id);"] } }]
+        },
+        {
+          "name": "Replay same issue idempotently",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"workerId\": \"{{workerId}}\",\n  \"recordedById\": \"{{keeperId}}\",\n  \"effectiveAt\": \"{{issueTime}}\",\n  \"dueAt\": \"{{dueTime}}\",\n  \"idempotencyKey\": \"{{issueKey}}\",\n  \"note\": \"Postman issue workflow\"\n}" }, "url": "{{baseUrl}}/assets/{{assetId}}/issue" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Replay returns original movement', () => { pm.response.to.have.status(201); pm.expect(pm.response.json()._id).to.eql(pm.environment.get('movementId')); });"] } }]
+        },
+        {
+          "name": "Return asset",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"workerId\": \"{{workerId}}\",\n  \"recordedById\": \"{{keeperId}}\",\n  \"effectiveAt\": \"{{returnTime}}\",\n  \"damaged\": false,\n  \"idempotencyKey\": \"{{returnKey}}\",\n  \"note\": \"Postman return workflow\"\n}" }, "url": "{{baseUrl}}/assets/{{assetId}}/return" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Asset returned', () => pm.response.to.have.status(201));", "pm.environment.set('movementId', pm.response.json()._id);"] } }]
+        },
+        {
+          "name": "Correct return time",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"movementId\": \"{{movementId}}\",\n  \"recordedById\": \"{{keeperId}}\",\n  \"effectiveAt\": \"2026-09-09T15:00:00.000Z\",\n  \"reason\": \"Paper docket confirms 15:00\",\n  \"idempotencyKey\": \"23456789-2345-4345-8345-23456789abcd\"\n}" }, "url": "{{baseUrl}}/assets/{{assetId}}/corrections" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Correction appended', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().type).to.eql('CORRECTION'); });"] } }]
+        },
+        { "name": "As-of exact issue time", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/ledger/as-of?at={{issueTime}}" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('Asset is held at exact issue instant', () => { pm.response.to.have.status(200); const row = pm.response.json().find(r => r.asset._id === pm.environment.get('assetId')); pm.expect(row.state.holderId).to.eql(pm.environment.get('workerId')); });"] } }] }
+      ]
+    },
+    {
+      "name": "03 - Reservations and service",
+      "item": [
+        {
+          "name": "Create reservation",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"workerId\": \"{{workerId}}\",\n  \"startAt\": \"{{reservationStart}}\",\n  \"endAt\": \"{{reservationEnd}}\",\n  \"idempotencyKey\": \"88888888-8888-4888-8888-888888888888\"\n}" }, "url": "{{baseUrl}}/reservations" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Reservation created', () => pm.response.to.have.status(201));", "pm.environment.set('reservationId', pm.response.json()._id);"] } }]
+        },
+        {
+          "name": "Cancel reservation",
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"recordedById\": \"{{keeperId}}\",\n  \"reason\": \"Postman cancellation test\"\n}" }, "url": "{{baseUrl}}/reservations/{{reservationId}}/cancel" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Reservation cancelled', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('CANCELLED'); });"] } }]
+        },
+        {
+          "name": "Take asset out of service",
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"recordedById\": \"{{keeperId}}\",\n  \"effectiveAt\": \"2026-09-09T18:00:00.000Z\",\n  \"idempotencyKey\": \"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee\",\n  \"reason\": \"Failed safety inspection\"\n}" }, "url": "{{baseUrl}}/assets/{{assetId}}/out-of-service" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Out-of-service event recorded', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().type).to.eql('OUT_OF_SERVICE'); });"] } }]
+        },
+        {
+          "name": "Return asset to service",
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"recordedById\": \"{{keeperId}}\",\n  \"effectiveAt\": \"2026-09-09T19:00:00.000Z\",\n  \"idempotencyKey\": \"12345678-1234-4234-8234-123456789abc\",\n  \"reason\": \"Inspection passed after repair\"\n}" }, "url": "{{baseUrl}}/assets/{{assetId}}/back-in-service" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Back-in-service event recorded', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().type).to.eql('BACK_IN_SERVICE'); });"] } }]
+        }
+      ]
+    },
+    {
+      "name": "04 - Negative validation examples",
+      "item": [
+        { "name": "Reject past reservation", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"workerId\": \"{{workerId}}\",\n  \"startAt\": \"2025-01-01T09:00:00.000Z\",\n  \"endAt\": \"2025-01-01T12:00:00.000Z\",\n  \"idempotencyKey\": \"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\"\n}" }, "url": "{{baseUrl}}/reservations" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('Past reservation rejected', () => pm.response.to.have.status(400));"] } }] },
+        { "name": "Reject reversed reservation", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"workerId\": \"{{workerId}}\",\n  \"startAt\": \"2026-09-10T12:00:00.000Z\",\n  \"endAt\": \"2026-09-10T09:00:00.000Z\",\n  \"idempotencyKey\": \"cccccccc-cccc-4ccc-8ccc-cccccccccccc\"\n}" }, "url": "{{baseUrl}}/reservations" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('Reversed window rejected', () => pm.response.to.have.status(400));"] } }] },
+        { "name": "Reject year-long reservation", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"workerId\": \"{{workerId}}\",\n  \"startAt\": \"2026-09-10T09:00:00.000Z\",\n  \"endAt\": \"2027-09-10T09:00:00.000Z\",\n  \"idempotencyKey\": \"dddddddd-dddd-4ddd-8ddd-dddddddddddd\"\n}" }, "url": "{{baseUrl}}/reservations" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('Long reservation rejected', () => pm.response.to.have.status(400));"] } }] },
+        { "name": "Reject expired certification", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"workerId\": \"{{expiredWorkerId}}\",\n  \"recordedById\": \"{{keeperId}}\",\n  \"effectiveAt\": \"{{issueTime}}\",\n  \"dueAt\": \"{{dueTime}}\",\n  \"idempotencyKey\": \"77777777-7777-4777-8777-777777777777\",\n  \"note\": \"Expired certification test\"\n}" }, "url": "{{baseUrl}}/assets/{{certifiedAssetId}}/issue" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('Expired certification rejected', () => pm.response.to.have.status(422));"] } }] }
+      ]
+    }
+  ]
+}
