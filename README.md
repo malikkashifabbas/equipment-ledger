@@ -1,4 +1,4 @@
-# Equipment Ledger API
+# Equipment Ledger
 
 Backend-first implementation of the Wyxan full-stack assessment. The API uses an immutable movement ledger for audit/history and an atomically maintained asset projection for fast current-state reads.
 
